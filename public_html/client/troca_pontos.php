@@ -12,6 +12,9 @@
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Recupera os dados do formulário
         $produtoId = $_POST['produto_id'];
+        $_SESSION['user_pontos'];
+
+        
 
         // Troca os pontos por produtos
         try {
@@ -57,6 +60,7 @@
                     </form>
                 </li>
             <?php endforeach; ?>
+            <a href="welcome.php">Voltar</a>
         </ul>
 
         <?php if (isset($mensagem)): ?>

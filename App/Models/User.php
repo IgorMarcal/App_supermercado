@@ -16,7 +16,9 @@
             try {
                 $connPdo = new \PDO(DBDRIVE.': host='.DBHOST.'; dbname='.DBNAME, DBUSER, DBPASS);
 
-                $sql = 'select * FROM '.self::$table.' WHERE email = :email AND senha = :senha';
+                $sql = 'select c.id, c.nome, c.email, c.senha, p.pontos FROM '.self::$table.' as c
+                    inner join pontos as p
+                    WHERE email = :email AND senha = :senha';
                 $stmt = $connPdo->prepare($sql);
                 $stmt->bindValue(':email', $email);
                 $stmt->bindValue(':senha', $senha);
@@ -25,8 +27,9 @@
                 if ($stmt->rowCount() > 0) {
                     header('Location: welcome.php');
                     $result = $stmt->fetch(\PDO::FETCH_ASSOC);
-                    echo $_SESSION['user_id'] = $result['id'];
-                    return;
+                    $_SESSION['user_id'] = $result['id'];
+                    $_SESSION['user_pontos'] = $result['pontos'];
+                    return $result;
                 } else {
                     throw new \Exception("Credenciais de login inválidas!");
                 }
@@ -44,7 +47,9 @@
         public static function select(int $id) {
             $connPdo = new \PDO(DBDRIVE.': host='.DBHOST.'; dbname='.DBNAME, DBUSER, DBPASS);
 
-            $sql = 'select * FROM '.self::$table.' WHERE id = :id';
+            $sql = 'select c.id, c.nome, c.email, c.senha, p.pontos FROM '.self::$table.' as c
+                inner join pontos as p 
+                WHERE c.id = :id';
             $stmt = $connPdo->prepare($sql);
             $stmt->bindValue(':id', $id);
             $stmt->execute();
@@ -74,7 +79,7 @@
         {
             $connPdo = new \PDO(DBDRIVE.': host='.DBHOST.'; dbname='.DBNAME, DBUSER, DBPASS);
 
-            $sql = 'INSERT INTO '.self::$table.' (email, password, name) VALUES (:em, :pa, :na)';
+            $sql = 'insert INTO '.self::$table.' (email, password, name) VALUES (:em, :pa, :na)';
             $stmt = $connPdo->prepare($sql);
             $stmt->bindValue(':em', $data['email']);
             $stmt->bindValue(':pa', $data['password']);
@@ -124,43 +129,37 @@
             return $produtos;
         }
 
-        public static function trocarPontosPorProduto($produtoId) {
+        public static function trocarPontosPorProduto($id_usuario,$produtoId) {
             // Recupera a conexão com o banco de dados
             $connPdo = new PDO(DBDRIVE.': host='.DBHOST.'; dbname='.DBNAME, DBUSER, DBPASS);
             
-            $sql = 'select pontos FROM produto';
+            $sql = 'select pontos FROM produto where id = ?';
             $stmt = $connPdo->prepare($sql);
+            $stmt->bindValue(1, $produtoId);
             $stmt->execute();
-            $pts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $pts_prod = $stmt->fetch(PDO::FETCH_ASSOC);
 
+            
 
             // Verifica se a consulta retornou algum resultado
             if ($stmt->rowCount() > 0) {
-                // Obtém os dados do produto
-                $produto = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+               
+                $sql = 'select pontos FROM pontos where cliente_id = ?';
+                $stmt = $connPdo->prepare($sql);
+                $stmt->bindValue(1, $id_usuario);
+                $stmt->execute();
+                $pts = $stmt->fetch(PDO::FETCH_ASSOC);
+
                 // Subtrai os pontos do cliente
-                $novosPontos = $_SESSION['user_pontos'] - $produto['pontos'];
+                $novosPontos = $pts['pontos'] - $pts_prod['pontos'];
         
                 // Atualiza a quantidade de pontos do cliente
-                $sql = 'UPDATE pontos SET pontos = :novos_pontos WHERE id_cliente = :id_cliente';
+                $sql = 'update pontos SET pontos = :novos_pontos WHERE cliente_id = :id_cliente';
                 $stmt = $connPdo->prepare($sql);
                 $stmt->bindValue(':novos_pontos', $novosPontos);
-                $stmt->bindValue(':id_cliente', $_SESSION['user_id']);
+                $stmt->bindValue(':id_cliente', $id_usuario);
                 $stmt->execute();
-        
-                // Cria o voucher para o cliente
-                $voucher = 'VOUCHER-' . uniqid();
-        
-                // Insere o registro do voucher no banco de dados
-                $sql = 'INSERT INTO vouchers (id_cliente, produto_id, voucher) VALUES (:id_cliente, :produto_id, :voucher)';
-                $stmt = $connPdo->prepare($sql);
-                $stmt->bindValue(':id_cliente', $_SESSION['user_id']);
-                $stmt->bindValue(':produto_id', $produto['id']);
-                $stmt->bindValue(':voucher', $voucher);
-                $stmt->execute();
-        
-                return $voucher; // Retorna o voucher gerado
+                return;
             } else {
                 throw new \Exception("Produto não encontrado ou pontos insuficientes para a troca.");
             }
