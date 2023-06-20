@@ -149,17 +149,24 @@
                 $stmt->bindValue(1, $id_usuario);
                 $stmt->execute();
                 $pts = $stmt->fetch(PDO::FETCH_ASSOC);
+                if($pts['pontos']<=0){
+                    return false;
+                }
 
-                // Subtrai os pontos do cliente
-                $novosPontos = $pts['pontos'] - $pts_prod['pontos'];
-        
-                // Atualiza a quantidade de pontos do cliente
-                $sql = 'update pontos SET pontos = :novos_pontos WHERE cliente_id = :id_cliente';
-                $stmt = $connPdo->prepare($sql);
-                $stmt->bindValue(':novos_pontos', $novosPontos);
-                $stmt->bindValue(':id_cliente', $id_usuario);
-                $stmt->execute();
-                return;
+                
+                if($pts['pontos'] >= $pts_prod['pontos']){
+                    // Subtrai os pontos do cliente
+                    $novosPontos = $pts['pontos'] - $pts_prod['pontos'];
+                    
+                    // Atualiza a quantidade de pontos do cliente
+                    $sql = 'update pontos SET pontos = :novos_pontos WHERE cliente_id = :id_cliente';
+                    $stmt = $connPdo->prepare($sql);
+                    $stmt->bindValue(':novos_pontos', $novosPontos);
+                    $stmt->bindValue(':id_cliente', $id_usuario);
+                    $stmt->execute();
+                    return true;
+                }
+                
             } else {
                 throw new \Exception("Produto não encontrado ou pontos insuficientes para a troca.");
             }

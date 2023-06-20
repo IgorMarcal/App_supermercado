@@ -18,10 +18,14 @@
 
         // Troca os pontos por produtos
         try {
-            \App\Models\User::trocarPontosPorProduto($_SESSION['user_id'], $produtoId);
+            if(\App\Models\User::trocarPontosPorProduto($_SESSION['user_id'], $produtoId)){
 
-            // Exibe uma mensagem de sucesso
-            $mensagem = "Pontos trocados com sucesso!";
+                // Exibe uma mensagem de sucesso
+        
+                $mensagem = "Pontos trocados com sucesso!";
+            }else{
+                $mensagem = "Erro ao trocar pontos";
+            }
         } catch (Exception $e) {
             // Exibe uma mensagem de erro
             $mensagem = "Erro ao trocar pontos: " . $e->getMessage();
