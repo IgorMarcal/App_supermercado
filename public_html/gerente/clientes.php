@@ -3,7 +3,10 @@
 require_once '../../App/Models/Manager.php';
 require_once '../../App/Models/User.php';
 
-session_start();
+if(!isset($_SESSION)){
+    session_start();
+}
+
 
 
 ?>
